@@ -54,18 +54,24 @@ function M.confirmCompletion()
     local complete_item = api.nvim_get_vvar('completed_item')
     local lnum, _ = unpack(api.nvim_win_get_cursor(0))
     if complete_item.user_data.lsp ~= nil then
-      local item = complete_item.user_data.lsp.completion_item
-      local bufnr = api.nvim_get_current_buf()
-      if item.additionalTextEdits then
-        local edits = vim.tbl_filter(
-          function(x) return x.range.start.line ~= (lnum - 1) end,
-          item.additionalTextEdits
-        )
-        vim.lsp.util.apply_text_edits(edits, bufnr)
-      end
       if vim.fn.exists('g:loaded_vsnip_integ') == 1 then
-        api.nvim_call_function('vsnip_integ#on_complete_done_for_lsp',
-          { { completed_item = complete_item, completion_item = item } })
+        api.nvim_call_function('vsnip_integ#do_complete_done', {
+          {
+            completed_item = complete_item,
+            completion_item = complete_item.user_data.lsp.completion_item,
+            apply_additional_text_edits = true
+          }
+        })
+      else
+        if item.additionalTextEdits then
+          local item = complete_item.user_data.lsp.completion_item
+          local bufnr = api.nvim_get_current_buf()
+          local edits = vim.tbl_filter(
+            function(x) return x.range.start.line ~= (lnum - 1) end,
+            item.additionalTextEdits
+          )
+          vim.lsp.util.apply_text_edits(edits, bufnr)
+        end
       end
     end
 
